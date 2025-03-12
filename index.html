@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decompression App</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+            text-align: center;
+            background-color: #f8f9fa;
+        }
+        h1 {
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        textarea {
+            width: 100%;
+            height: 120px;
+            margin: 10px 0;
+            padding: 10px;
+            font-family: monospace;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            resize: none;
+        }
+        button {
+            padding: 10px 20px;
+            margin-top: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #outputContainer {
+            display: none;
+            margin-top: 20px;
+            text-align: left;
+        }
+        #output {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            text-align: left;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        #copyBtn {
+            background-color: #007bff;
+            margin-top: 5px;
+        }
+        #copyBtn:hover {
+            background-color: #0056b3;
+        }
+        .error {
+            color: white;
+            background: #dc3545;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            color: white;
+            background: #28a745;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Compressed Data Decompressor</h1>
+    
+    <div class="container">
+        <label for="inputData"><strong>Enter Compressed Base64 Data:</strong></label><br>
+        <textarea id="inputData" placeholder="Paste your compressed base64 string here..."></textarea>
+        <button onclick="decompressData()">Decompress</button>
+        <div id="error" class="error"></div>
+        <div id="success" class="success">Decompression successful!</div>
+        <div id="outputContainer">
+            <h3>Decompressed Output:</h3>
+            <pre id="output"></pre>
+            <button id="copyBtn" onclick="copyOutput()">Copy to Clipboard</button>
+        </div>
+    </div>
+
+    <script>
+        function isValidBase64(str) {
+            const base64Regex = /^[A-Za-z0-9+/=]+$/;
+            return base64Regex.test(str) && (str.length % 4 === 0);
+        }
+
+        function decompressShopData(compressedBase64) {
+            if (!compressedBase64 || typeof compressedBase64 !== 'string') {
+                throw new Error('Invalid input: Must be a non-empty string');
+            }
+
+            compressedBase64 = compressedBase64.replace(/\\/g, '');
+
+            if (!isValidBase64(compressedBase64)) {
+                throw new Error('Invalid base64 encoding');
+            }
+
+            let binaryString = atob(compressedBase64);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+
+            let decompressed = pako.inflate(bytes, { to: 'string' });
+            return JSON.parse(decompressed);
+        }
+
+        function decompressData() {
+            const input = document.getElementById('inputData').value.trim();
+            const outputDiv = document.getElementById('output');
+            const errorDiv = document.getElementById('error');
+            const successDiv = document.getElementById('success');
+            const outputContainer = document.getElementById('outputContainer');
+
+            outputDiv.textContent = '';
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            outputContainer.style.display = 'none';
+
+            if (!input) {
+                errorDiv.textContent = 'Please enter compressed data';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const result = decompressShopData(input);
+                outputDiv.textContent = JSON.stringify(result, null, 2);
+                outputContainer.style.display = 'block';
+                successDiv.style.display = 'block';
+            } catch (error) {
+                errorDiv.textContent = error.message;
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        function copyOutput() {
+            const outputText = document.getElementById('output').textContent;
+            navigator.clipboard.writeText(outputText).then(() => {
+                alert('Copied to clipboard!');
+            }).catch(err => {
+                alert('Copy failed: ' + err);
+            });
+        }
+    </script>
+</body>
+</html>
